@@ -11,7 +11,7 @@
     "status": {
       "type": "string",
       "enum": ["Available", "Preparing", "Charging", "SuspendedEVSE", "SuspendedEV",
-               "Finishing", "Reserved", "Unavailable", "Faulted"]
+               "Finishing", "Unavailable", "Faulted"]
     },
     "error_code": {
       "type": "string",

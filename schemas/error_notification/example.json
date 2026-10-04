@@ -1,0 +1,9 @@
+{
+  "event_id": "diag-000001",
+  "charger_id": "DK-CPH-000123",
+  "connector_id": 0,
+  "event_type": "error_notification",
+  "schema_version": 1,
+  "occurred_at": "2026-09-28T10:01:00Z",
+  "payload": { "severity": "critical", "code": "GFCI_TRIP", "message": "Ground fault on the AC input" }
+}

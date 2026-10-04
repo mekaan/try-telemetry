@@ -1,0 +1,7 @@
+team: customer-support
+owner: "@acme/support-tools"
+service_account: support/console-backend
+access: api
+rate_limit_rps: 20
+event_types:
+  - status_notification

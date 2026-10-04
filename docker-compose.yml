@@ -1,0 +1,38 @@
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: telemetry
+      POSTGRES_PASSWORD: telemetry   # local only; see README section 4 for real secrets
+      POSTGRES_DB: telemetry
+    ports: ["5432:5432"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U telemetry"]
+      interval: 2s
+      retries: 15
+
+  telemetry:
+    build: .
+    environment:
+      DATABASE_URL: postgres://telemetry:telemetry@db:5432/telemetry
+    # Mounted so a new schema can be dropped in and picked up on restart,
+    # which is what scripts/demo.sh does.
+    volumes: ["./schemas:/schemas:ro"]
+    ports: ["8080:8080"]
+    depends_on:
+      db: { condition: service_healthy }
+
+  # `make test` and `make check` run Go in a container, so Docker is the only
+  # thing you need installed.
+  go:
+    image: golang:1.25-alpine
+    profiles: [tools]
+    working_dir: /src
+    environment:
+      DATABASE_URL: postgres://telemetry:telemetry@db:5432/telemetry
+    volumes: [".:/src", "gomod:/go/pkg/mod"]
+    depends_on:
+      db: { condition: service_healthy }
+
+volumes:
+  gomod:

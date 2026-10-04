@@ -1,0 +1,14 @@
+{
+  "event_id": "ocpp-gw-7f3a9c11",
+  "charger_id": "DK-CPH-000123",
+  "connector_id": 1,
+  "event_type": "meter_values",
+  "schema_version": 1,
+  "occurred_at": "2026-09-28T10:00:30Z",
+  "payload": {
+    "transaction_id": "tx-88121",
+    "energy_active_import_wh": 15230.5,
+    "power_active_import_w": 11040,
+    "soc_percent": 64
+  }
+}

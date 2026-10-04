@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Connector status change (from OCPP StatusNotification)",
+  "x-owner": "@acme/charging-core",
+  "x-contains-pii": false,
+  "x-retention-days": 90,
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["status", "error_code"],
+  "properties": {
+    "status": {
+      "type": "string",
+      "enum": ["Available", "Preparing", "Charging", "SuspendedEVSE", "SuspendedEV",
+               "Finishing", "Reserved", "Unavailable", "Faulted"]
+    },
+    "error_code": {
+      "type": "string",
+      "enum": ["NoError", "ConnectorLockFailure", "EVCommunicationError", "GroundFailure",
+               "HighTemperature", "InternalError", "LocalListConflict", "OtherError",
+               "OverCurrentFailure", "OverVoltage", "PowerMeterFailure", "PowerSwitchFailure",
+               "ReaderFailure", "ResetFailure", "UnderVoltage", "WeakSignal"]
+    },
+    "vendor_error_code": { "type": "string", "maxLength": 50 },
+    "info": { "type": "string", "maxLength": 50 }
+  }
+}

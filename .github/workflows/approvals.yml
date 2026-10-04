@@ -1,0 +1,80 @@
+name: approvals
+
+# Required status check on main, next to ci. schemas/ and consumers/ have no
+# CODEOWNERS entry, so this is what makes ownership real: the team named in
+# each changed file must approve, and cloud-platform must approve when
+# platformcheck finds the change sensitive.
+#
+# The steps below execute no code from the PR: the checker and the approval
+# script are built from the base branch, and the PR checkout is only read as
+# data, so editing platformcheck or the script in a PR changes nothing here.
+#
+# This workflow file itself is a different matter. For pull_request events
+# GitHub runs the PR's own copy of it, so a PR could rewrite this file to
+# pass. What stops that is CODEOWNERS (the * entry covers .github/) plus
+# required code-owner review on main: such a PR needs cloud-platform to
+# approve it. A stronger setup is an org ruleset that runs this as a required
+# workflow from a separate repo that product teams can't edit.
+#
+# No paths filter: a required check that never runs stays pending forever.
+# PRs that touch neither directory pass straight through.
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+  pull_request_review:
+    types: [submitted, dismissed]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  approvals:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trusted code from the base branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          path: trusted
+          persist-credentials: false
+      - name: The PR, as data only
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          path: pr
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-go@v5
+        with: { go-version-file: trusted/go.mod }
+      - name: Build platformcheck from base
+        working-directory: trusted
+        run: go build -o "$RUNNER_TEMP/platformcheck" ./tools/platformcheck
+      # Errors fail the ci workflow; here we only need the review verdict.
+      # Diff against the merge-base, so changes that landed on main after the
+      # branch was cut don't count as this PR's changes.
+      - name: Decide whether cloud-platform must approve
+        working-directory: pr
+        run: |
+          mb=$(git merge-base "${{ github.event.pull_request.base.sha }}" HEAD)
+          echo "MERGE_BASE=$mb" >> "$GITHUB_ENV"
+          "$RUNNER_TEMP/platformcheck" -base "$mb" -review-out "$RUNNER_TEMP/review.md" || true
+      # Reading team membership needs a GitHub App; it gets members:read and
+      # nothing else.
+      - uses: actions/create-github-app-token@v2
+        id: app
+        with:
+          app-id: ${{ vars.PLATFORM_BOT_APP_ID }}
+          private-key: ${{ secrets.PLATFORM_BOT_PRIVATE_KEY }}
+          owner: acme
+          permission-members: read
+      - name: Check approvals
+        working-directory: pr
+        env:
+          GH_TOKEN: ${{ steps.app.outputs.token }}
+          REPO: ${{ github.repository }}
+          PR: ${{ github.event.pull_request.number }}
+          BASE: ${{ env.MERGE_BASE }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          REVIEW_FILE: ${{ runner.temp }}/review.md
+        run: '"$GITHUB_WORKSPACE/trusted/scripts/check-approvals.sh"'

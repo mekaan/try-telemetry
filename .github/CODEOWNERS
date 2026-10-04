@@ -1,0 +1,11 @@
+# The platform owns the envelope, the pipeline, the database and the paved road.
+*            @acme/cloud-platform
+
+# Event types and consumer registrations have no code owner on purpose, so a
+# team never waits on us to add one. Ownership lives in the files themselves
+# (x-owner in a schema, owner: in a registration). The owner-approval check
+# requires an approval from that team, and from the previous owner when a file
+# changes hands. platformcheck asks for cloud-platform review only when a
+# change is sensitive (see README section 2).
+/schemas/
+/consumers/

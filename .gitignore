@@ -1,0 +1,5 @@
+.DS_Store
+/review.md
+infra/.terraform/
+infra/.terraform.lock.hcl
+*.tfstate*

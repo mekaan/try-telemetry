@@ -1,0 +1,66 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: telemetry
+          POSTGRES_PASSWORD: telemetry
+          POSTGRES_DB: telemetry
+        ports: ["5432:5432"]
+        options: --health-cmd "pg_isready -U telemetry" --health-interval 2s --health-retries 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with: { go-version-file: go.mod }
+      - run: go vet ./...
+      - run: go test -race ./...
+        env:
+          DATABASE_URL: postgres://telemetry:telemetry@localhost:5432/telemetry
+
+  # The guardrail. Fails on anything that cannot merge (breaking schema edits,
+  # unknown event types, examples the pipeline rejects). When the change is
+  # allowed but sensitive, it labels the PR and comments why, so the author
+  # knows who to ask. The label is only a signal; approvals.yml recomputes the
+  # verdict itself before requiring cloud-platform.
+  platformcheck:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - uses: actions/setup-go@v5
+        with: { go-version-file: go.mod }
+      - name: platformcheck
+        run: |
+          if [ -n "${{ github.base_ref }}" ]; then set -- -base "origin/${{ github.base_ref }}"; fi
+          go run ./tools/platformcheck "$@" -review-out review.md -comment-out comment.md
+      - name: Tell the author
+        if: always() && github.event_name == 'pull_request'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        # One comment per PR, updated on each push, and a label that follows
+        # the current verdict.
+        run: |
+          pr=${{ github.event.pull_request.number }}
+          if [ -s review.md ]; then
+            gh pr edit "$pr" --add-label needs-platform-review
+          else
+            gh pr edit "$pr" --remove-label needs-platform-review || true
+          fi
+          if [ -s comment.md ]; then
+            gh pr comment "$pr" --edit-last --body-file comment.md || gh pr comment "$pr" --body-file comment.md
+          fi

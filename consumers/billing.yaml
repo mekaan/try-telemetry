@@ -1,0 +1,9 @@
+# Registered by the billing team. Merging this file gives them a Kafka
+# consumer group and an IAM role for their service account; nothing else.
+team: billing
+owner: "@acme/billing"
+service_account: billing/meter-aggregator   # namespace/name on EKS
+access: stream                              # stream = own consumer group, api = read API client
+event_types:
+  - meter_values
+  - status_notification

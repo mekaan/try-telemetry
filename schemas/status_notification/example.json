@@ -1,0 +1,9 @@
+{
+  "event_id": "ocpp-gw-7f3a9c10",
+  "charger_id": "DK-CPH-000123",
+  "connector_id": 1,
+  "event_type": "status_notification",
+  "schema_version": 1,
+  "occurred_at": "2026-09-28T10:00:00Z",
+  "payload": { "status": "Charging", "error_code": "NoError" }
+}

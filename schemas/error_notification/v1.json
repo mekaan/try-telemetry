@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Charger fault raised by the diagnostics team's parser",
+  "x-owner": "@acme/field-ops",
+  "x-contains-pii": false,
+  "x-retention-days": 180,
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["severity", "code"],
+  "properties": {
+    "severity": { "type": "string", "enum": ["info", "warning", "critical"] },
+    "code": { "type": "string" },
+    "message": { "type": "string", "maxLength": 500 }
+  }
+}
